@@ -3,7 +3,7 @@
 
 
 # usage
-```
+```javascript
 import reconnectWebSocket from 'auto-reconnect-webSocket'
 const socketInstance = new reconnectWebSocket({   // instance
    onMessage () {
