@@ -1,7 +1,7 @@
 {
-  "name": "im-websdk",
+  "name": "auto-reconnect-webSocket",
   "version": "1.0.0",
-  "description": "im web sdk",
+  "description": "auto reconnect webSocket",
   "scripts": {
     "build": "cross-env NODE_ENV=development webpack  --progress --hide-modules --config webpack.config.js",
     "build-pro": "cross-env NODE_ENV=production webpack --progress --hide-modules --config webpack.config.js"
