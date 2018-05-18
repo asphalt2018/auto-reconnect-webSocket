@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "outDir": "../types",
+    "module": "es2015",
+    "allowSyntheticDefaultImports": false,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "lib": [
+      "dom",
+      "es2015"
+    ],
+    "declaration": true
+  }
+}
