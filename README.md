@@ -1,7 +1,8 @@
 
-
-import reconnectWebSocket from 'auto-reconnect-webSocket'		
-const socketInstance = new reconnectWebSocket({   // instance		
+# usage
+```
+import reconnectWebSocket from 'auto-reconnect-webSocket'
+const socketInstance = new reconnectWebSocket({   // instance
    onMessage () {
      // received messages
    },
@@ -15,10 +16,10 @@ const socketInstance = new reconnectWebSocket({   // instance
 
    }
 })
-IM.connectWSServer(url, callback) //connect websocket
-IM.request(cmd, params, callback) // others
+socketInstance.connectWSServer(url, callback) //connect websocket
+socketInstance.request(cmd, params, callback) // others
     
 ```
-* entry
+# entry
 	auto-reconnect-webSocket/dist/auto-reconnect-webSocket.js
 
