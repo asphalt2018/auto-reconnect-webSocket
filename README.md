@@ -1,5 +1,5 @@
 # introduction
-	auto-reconnect-webSocket is a tiny and fast plugin capable of reconnecting webSocket automatically, zipped only 9kb.
+  auto-reconnect-webSocket is a tiny and fast plugin capable of reconnecting webSocket automatically, zipped only 9kb.
 
 
 # usage
