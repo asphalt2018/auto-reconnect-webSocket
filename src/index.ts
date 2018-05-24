@@ -1,5 +1,5 @@
-import ReconnectWebSocket from "./reconnect-websocket";
-import {msgToUint, uintToMsg} from "./helper"
+import ReconnectWebSocket from './reconnect-websocket';
+import {msgToUint, uintToMsg} from './helper';
 
 export interface InitParams {
   onMessage: (params: object) => void;
@@ -9,47 +9,44 @@ export interface InitParams {
 }
 
 export default class IM {
+  public onMessage: (params: object) => void;
+  public onConnected?: (params?: object) => void;
+  public onClosed?: (params?: object) => void;
+  public onError?: (params?: object) => void;
+  public callbacks: object = {};
   private timeout: number = 20;
   private canRequest: boolean = false;
   private reqNo: string = `${Math.random().toString(16).substring(2)}_${Date.now()}`;
-  onMessage: (params: object) => void;
-  onConnected?: (params?: object) => void;
-  onClosed?: (params?: object) => void;
-  onError?: (params?: object) => void;
-  callbacks: object = {};
   private ws: any;
 
+  /**
+   *
+   * @param {InitParams} config
+   */
   constructor(config: InitParams) {
     this.initTimeoutTicker();
-    this.onMessage = config.onMessage;
-    this.onConnected = config.onConnected;
-    this.onClosed = config.onClosed;
-    this.onError = config.onError
+    if (config.onMessage) {
+      this.onMessage = config.onMessage;
+    }
+    if (config.onConnected) {
+      this.onConnected = config.onConnected;
+    }
+    if (config.onClosed) {
+      this.onClosed = config.onClosed;
+    }
+    if (config.onError) {
+      this.onError = config.onError;
+    }
   }
 
-  initTimeoutTicker(): void {
-    setInterval(() => {
-      let now = Date.now();
-      for (let cmd of Object.keys(this.callbacks)) {
-        let cbs = this.callbacks[cmd];
-        for (let reqNo of Object.keys(cbs)) {
-          let cb = cbs[reqNo];
-          if (now > cb.deadline) {
-            cb(null, {data: {code: "0", message: "request timeout", status: false}});
-            delete this.callbacks[cmd][reqNo];
-          }
-        }
-      }
-    }, 1000 * this.timeout)
-  }
-
-  close(): void {
-    this.ws.close()
-  }
-
-  connectWSServer(url: string, cb: (error: null, response: object) => void): void {
+  /**
+   *
+   * @param {string} url
+   * @param {(error: null, response: object) => void} cb
+   */
+  public connectWSServer(url: string, cb: (error: null, response: object) => void): void {
     this.ws = new ReconnectWebSocket(url, null, {
-      binaryType: "arraybuffer",
+      binaryType: 'arraybuffer',
       debug: false,
       reconnectInterval: 4000,
       timeoutInterval: 5000
@@ -57,7 +54,7 @@ export default class IM {
     this.ws.onOpen = (data: CustomEvent): void => {
       this.canRequest = true;
       if (cb) {
-        cb(null, data)
+        cb(null, data);
       }
       this.onConnected(data);
     };
@@ -66,7 +63,7 @@ export default class IM {
       this.onClosed(data);
     };
     this.ws.onMessage = (data: any): void => {
-      let newData = uintToMsg(data.data);
+      const newData = uintToMsg(data.data);
       if (this.callbacks[newData.cmd] && this.callbacks[newData.cmd][newData.resNo]) {
         this.callbacks[newData.cmd][newData.resNo](null, newData);
         delete this.callbacks[newData.cmd][newData.resNo];
@@ -85,9 +82,18 @@ export default class IM {
     };
   }
 
-  request(cmd: string, data: object, cb: any) {
-    if (!this.canRequest) return false;
-    if (typeof cb === "function") {
+  /**
+   *
+   * @param {string} cmd
+   * @param {object} data
+   * @param cb
+   * @returns {boolean}
+   */
+  public request(cmd: string, data: object, cb: any) {
+    if (!this.canRequest) {
+      return;
+    }
+    if (typeof cb === 'function') {
       cb.deadline = Date.now() + 1000 * 10;
       if (!this.callbacks[cmd]) {
         this.callbacks[cmd] = {};
@@ -97,15 +103,35 @@ export default class IM {
     this.send(cmd, this.reqNo, data);
   }
 
-  send(cmd: string, reqNo: string, params: object): void {
-    let msg = {
+  public send(cmd: string, reqNo: string, params: object): void {
+    const msg = {
       cmd, reqNo, params
     };
     this.ws.send(msgToUint(msg));
   }
 
-  closeConnection(): void {
-    this.ws.close()
+  public closeConnection(): void {
+    this.ws.close();
+  }
+
+  private close(): void {
+    this.ws.close();
+  }
+
+  private initTimeoutTicker(): void {
+    setInterval(() => {
+      const now = Date.now();
+      for (const cmd of Object.keys(this.callbacks)) {
+        const cbs = this.callbacks[cmd];
+        for (const reqNo of Object.keys(cbs)) {
+          const cb = cbs[reqNo];
+          if (now > cb.deadline) {
+            cb(null, {data: {code: '0', msg: '请求超时', status: false}});
+            delete this.callbacks[cmd][reqNo];
+          }
+        }
+      }
+    }, 1000 * this.timeout);
   }
 }
 

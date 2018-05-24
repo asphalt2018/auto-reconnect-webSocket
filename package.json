@@ -23,14 +23,15 @@
     "webpack-vendor-chunk-plugin": "^1.0.0"
   },
   "main": "./dist/auto-reconnect-webSocket.js",
-  "typings": "./dist/types/index.d.ts",
+  "typings": "./types/index.d.ts",
   "files": [
     "src",
     "dist/*.js",
-    "dist/types/*.d.ts"
+    "types/*.d.ts"
   ],
   "author": "asphalt8",
   "license": "ISC",
   "dependencies": {
+    "tslint": "^5.10.0"
   }
 }

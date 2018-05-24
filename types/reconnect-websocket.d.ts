@@ -9,31 +9,41 @@ export interface ReconnectSettings {
     maxReconnectAttempts?: null;
 }
 export default class ReconnectWebSocket {
-    private reconnectAttempts;
-    private readyState;
-    private timedOut;
-    private forcedClose;
-    private maxReconnectAttempts;
-    private readonly debug;
-    private readonly debugAll;
-    binaryType: BinaryType;
+    binaryType: any;
     protocols: any;
     protocol: string;
     ws: WebSocket;
     addEventListener: any;
     removeEventListener: any;
     dispatchEvent: any;
-    readonly url: string;
-    readonly eventTarget: HTMLElement;
-    readonly CONNECTING: number;
-    readonly OPEN: number;
-    readonly CLOSING: number;
-    readonly CLOSED: number;
+    private readonly url;
+    private readonly eventTarget;
+    private readonly CONNECTING;
+    private readonly OPEN;
+    private readonly CLOSING;
+    private readonly CLOSED;
+    private reconnectAttempts;
+    private readyState;
+    private timedOut;
+    private forcedClose;
+    private maxReconnectAttempts;
+    private debug;
+    private readonly debugAll;
+    /**
+     *
+     * @param {string} url
+     * @param protocols
+     * @param {ReconnectSettings} options
+     */
     constructor(url: string, protocols: any, options: ReconnectSettings);
+    /**
+     *
+     * @param {ReconnectSettings} options
+     */
     initSettings(options: ReconnectSettings): void;
     open(reconnectAttempt: boolean): void;
     addSocketListener(): void;
-    send(data: string | ArrayBuffer | Blob | ArrayBufferView): void;
+    send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void;
     close(code: any, reason: string): void;
     refresh(): void;
     onOpen(event: Event): void;

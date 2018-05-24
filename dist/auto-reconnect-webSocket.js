@@ -81,32 +81,51 @@ return /******/ (function(modules) { // webpackBootstrap
 /* harmony export (immutable) */ __webpack_exports__["b"] = msgToUint;
 /* harmony export (immutable) */ __webpack_exports__["c"] = uintToMsg;
 /* harmony export (immutable) */ __webpack_exports__["a"] = generateEvent;
+/**
+ *
+ * @param {object} json
+ * @returns {ArrayLike<number> | ArrayBuffer}
+ */
 function msgToUint(json) {
     try {
-        let string = btoa(encodeURIComponent(JSON.stringify(json))), charList = string.split(""), uintArray = [];
-        for (let item of charList) {
+        var data = btoa(encodeURIComponent(JSON.stringify(json)));
+        var charList = data.split('');
+        var uintArray = [];
+        for (var _i = 0, charList_1 = charList; _i < charList_1.length; _i++) {
+            var item = charList_1[_i];
             uintArray.push(item.charCodeAt(0));
         }
         return new Uint8Array(uintArray);
     }
     catch (err) {
-        console.log(`msgToUint err${err}`);
+        console.log("msgToUint err" + err);
         return new Uint8Array([]);
     }
 }
+/**
+ *
+ * @param {ArrayLike<number> | ArrayBuffer} uintArray
+ * @returns {any}
+ */
 function uintToMsg(uintArray) {
     try {
-        let encodedString = String.fromCharCode.apply(null, new Uint8Array(uintArray));
-        let decodedString = decodeURIComponent(atob(encodedString));
+        var encodedString = String.fromCharCode.apply(null, new Uint8Array(uintArray));
+        var decodedString = decodeURIComponent(atob(encodedString));
         return JSON.parse(decodedString);
     }
     catch (err) {
-        console.log(`uintToMsg err${err}`);
+        console.log("uintToMsg err" + err);
         return {};
     }
 }
+/**
+ *
+ * @param {string} eventName
+ * @param args
+ * @returns {CustomEvent}
+ */
 function generateEvent(eventName, args) {
-    const event = document.createEvent("CustomEvent");
+    var event = document.createEvent('CustomEvent');
     event.initCustomEvent(eventName, false, false, args);
     return event;
 }
@@ -122,78 +141,86 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__helper__ = __webpack_require__(0);
 
 
-class IM {
-    constructor(config) {
+var IM = /** @class */ (function () {
+    /**
+     *
+     * @param {InitParams} config
+     */
+    function IM(config) {
+        this.callbacks = {};
         this.timeout = 20;
         this.canRequest = false;
-        this.reqNo = `${Math.random().toString(16).substring(2)}_${Date.now()}`;
-        this.callbacks = {};
+        this.reqNo = Math.random().toString(16).substring(2) + "_" + Date.now();
         this.initTimeoutTicker();
-        this.onMessage = config.onMessage;
-        this.onConnected = config.onConnected;
-        this.onClosed = config.onClosed;
-        this.onError = config.onError;
+        if (config.onMessage) {
+            this.onMessage = config.onMessage;
+        }
+        if (config.onConnected) {
+            this.onConnected = config.onConnected;
+        }
+        if (config.onClosed) {
+            this.onClosed = config.onClosed;
+        }
+        if (config.onError) {
+            this.onError = config.onError;
+        }
     }
-    initTimeoutTicker() {
-        setInterval(() => {
-            let now = Date.now();
-            for (let cmd of Object.keys(this.callbacks)) {
-                let cbs = this.callbacks[cmd];
-                for (let reqNo of Object.keys(cbs)) {
-                    let cb = cbs[reqNo];
-                    if (now > cb.deadline) {
-                        cb(null, { data: { code: "0", message: "request timeout", status: false } });
-                        delete this.callbacks[cmd][reqNo];
-                    }
-                }
-            }
-        }, 1000 * this.timeout);
-    }
-    close() {
-        this.ws.close();
-    }
-    connectWSServer(url, cb) {
+    /**
+     *
+     * @param {string} url
+     * @param {(error: null, response: object) => void} cb
+     */
+    IM.prototype.connectWSServer = function (url, cb) {
+        var _this = this;
         this.ws = new __WEBPACK_IMPORTED_MODULE_0__reconnect_websocket__["a" /* default */](url, null, {
-            binaryType: "arraybuffer",
+            binaryType: 'arraybuffer',
             debug: false,
             reconnectInterval: 4000,
             timeoutInterval: 5000
         });
-        this.ws.onOpen = (data) => {
-            this.canRequest = true;
+        this.ws.onOpen = function (data) {
+            _this.canRequest = true;
             if (cb) {
                 cb(null, data);
             }
-            this.onConnected(data);
+            _this.onConnected(data);
         };
-        this.ws.onClose = (data) => {
-            this.canRequest = false;
-            this.onClosed(data);
+        this.ws.onClose = function (data) {
+            _this.canRequest = false;
+            _this.onClosed(data);
         };
-        this.ws.onMessage = (data) => {
-            let newData = Object(__WEBPACK_IMPORTED_MODULE_1__helper__["c" /* uintToMsg */])(data.data);
-            if (this.callbacks[newData.cmd] && this.callbacks[newData.cmd][newData.resNo]) {
-                this.callbacks[newData.cmd][newData.resNo](null, newData);
-                delete this.callbacks[newData.cmd][newData.resNo];
+        this.ws.onMessage = function (data) {
+            var newData = Object(__WEBPACK_IMPORTED_MODULE_1__helper__["c" /* uintToMsg */])(data.data);
+            if (_this.callbacks[newData.cmd] && _this.callbacks[newData.cmd][newData.resNo]) {
+                _this.callbacks[newData.cmd][newData.resNo](null, newData);
+                delete _this.callbacks[newData.cmd][newData.resNo];
             }
             else {
-                this.onMessage(newData);
+                _this.onMessage(newData);
             }
         };
-        this.ws.onError = (data) => {
-            this.onError(data);
+        this.ws.onError = function (data) {
+            _this.onError(data);
         };
-        window.onbeforeunload = () => {
-            this.ws.close();
+        window.onbeforeunload = function () {
+            _this.ws.close();
         };
-        window.onunload = () => {
-            this.ws.close();
+        window.onunload = function () {
+            _this.ws.close();
         };
-    }
-    request(cmd, data, cb) {
-        if (!this.canRequest)
-            return false;
-        if (typeof cb === "function") {
+    };
+    /**
+     *
+     * @param {string} cmd
+     * @param {object} data
+     * @param cb
+     * @returns {boolean}
+     */
+    IM.prototype.request = function (cmd, data, cb) {
+        if (!this.canRequest) {
+            return;
+        }
+        if (typeof cb === 'function') {
             cb.deadline = Date.now() + 1000 * 10;
             if (!this.callbacks[cmd]) {
                 this.callbacks[cmd] = {};
@@ -201,19 +228,40 @@ class IM {
             this.callbacks[cmd][this.reqNo] = cb;
         }
         this.send(cmd, this.reqNo, data);
-    }
-    send(cmd, reqNo, params) {
-        let msg = {
-            cmd, reqNo, params
+    };
+    IM.prototype.send = function (cmd, reqNo, params) {
+        var msg = {
+            cmd: cmd, reqNo: reqNo, params: params
         };
         this.ws.send(Object(__WEBPACK_IMPORTED_MODULE_1__helper__["b" /* msgToUint */])(msg));
-    }
-    closeConnection() {
+    };
+    IM.prototype.closeConnection = function () {
         this.ws.close();
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["default"] = IM;
-
+    };
+    IM.prototype.close = function () {
+        this.ws.close();
+    };
+    IM.prototype.initTimeoutTicker = function () {
+        var _this = this;
+        setInterval(function () {
+            var now = Date.now();
+            for (var _i = 0, _a = Object.keys(_this.callbacks); _i < _a.length; _i++) {
+                var cmd = _a[_i];
+                var cbs = _this.callbacks[cmd];
+                for (var _b = 0, _c = Object.keys(cbs); _b < _c.length; _b++) {
+                    var reqNo = _c[_b];
+                    var cb = cbs[reqNo];
+                    if (now > cb.deadline) {
+                        cb(null, { data: { code: '0', msg: '请求超时', status: false } });
+                        delete _this.callbacks[cmd][reqNo];
+                    }
+                }
+            }
+        }, 1000 * this.timeout);
+    };
+    return IM;
+}());
+/* harmony default export */ __webpack_exports__["default"] = (IM);
 
 
 /***/ }),
@@ -223,7 +271,7 @@ class IM {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__helper__ = __webpack_require__(0);
 
-const defaultReconnectSettings = {
+var defaultReconnectSettings = {
     debug: false,
     automaticOpen: true,
     reconnectInterval: 1000,
@@ -231,22 +279,28 @@ const defaultReconnectSettings = {
     reconnectDecay: 1.5,
     timeoutInterval: 2000,
     maxReconnectAttempts: null,
-    binaryType: "blob"
+    binaryType: 'blob'
 };
-class ReconnectWebSocket {
-    constructor(url, protocols, options) {
+var ReconnectWebSocket = /** @class */ (function () {
+    /**
+     *
+     * @param {string} url
+     * @param protocols
+     * @param {ReconnectSettings} options
+     */
+    function ReconnectWebSocket(url, protocols, options) {
         this.reconnectAttempts = 0;
         this.url = url;
         this.initSettings(options);
         this.readyState = WebSocket.CONNECTING;
-        this.protocol = "";
+        this.protocol = '';
         this.protocols = protocols;
-        this.eventTarget = document.createElement("div");
+        this.eventTarget = document.createElement('div');
         this.addSocketListener();
         this.addEventListener = this.eventTarget.addEventListener.bind(this.eventTarget);
         this.removeEventListener = this.eventTarget.removeEventListener.bind(this.eventTarget);
         this.dispatchEvent = this.eventTarget.dispatchEvent.bind(this.eventTarget);
-        if (defaultReconnectSettings.automaticOpen == true) {
+        if (defaultReconnectSettings.automaticOpen === true) {
             this.open(false);
         }
         this.debugAll = false;
@@ -255,19 +309,25 @@ class ReconnectWebSocket {
         this.CLOSING = WebSocket.CLOSING;
         this.CLOSED = WebSocket.CLOSED;
     }
-    initSettings(options) {
-        for (let key of Object.keys(options)) {
-            if (typeof options[key] !== "undefined") {
+    /**
+     *
+     * @param {ReconnectSettings} options
+     */
+    ReconnectWebSocket.prototype.initSettings = function (options) {
+        for (var _i = 0, _a = Object.keys(options); _i < _a.length; _i++) {
+            var key = _a[_i];
+            if (typeof options[key] !== 'undefined') {
                 this[key] = options[key];
             }
             else {
                 this[key] = defaultReconnectSettings[key];
             }
         }
-    }
-    open(reconnectAttempt) {
-        if (!("WebSocket" in window)) {
-            throw new Error("WebSocket not supported by current browser!");
+    };
+    ReconnectWebSocket.prototype.open = function (reconnectAttempt) {
+        var _this = this;
+        if (!('WebSocket' in window)) {
+            throw new Error('WebSocket not supported by current browser!');
         }
         this.ws = new WebSocket(this.url, this.protocols || []);
         this.ws.binaryType = this.binaryType;
@@ -277,133 +337,129 @@ class ReconnectWebSocket {
             }
         }
         else {
-            this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("connecting"));
+            this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('connecting'));
             this.reconnectAttempts = 0;
         }
         if (this.debug || this.debugAll) {
-            console.debug("ReconnectingWebSocket", "attempt-connect", this.url);
+            console.debug('ReconnectingWebSocket', 'attempt-connect', this.url);
         }
-        const localWs = this.ws;
-        const timeout = setTimeout(() => {
-            if (this.debug || this.debugAll) {
-                console.debug("ReconnectingWebSocket", "connection-timeout", this.url);
+        var localWs = this.ws;
+        var timeout = setTimeout(function () {
+            if (_this.debug || _this.debugAll) {
+                console.debug('ReconnectingWebSocket', 'connection-timeout', _this.url);
             }
-            this.timedOut = true;
+            _this.timedOut = true;
             localWs.close();
-            this.timedOut = false;
+            _this.timedOut = false;
         }, defaultReconnectSettings.timeoutInterval);
-        this.ws.onopen = () => {
+        this.ws.onopen = function () {
             clearTimeout(timeout);
-            if (this.debug || this.debugAll) {
-                console.debug("ReconnectingWebSocket", "onopen", this.url);
+            if (_this.debug || _this.debugAll) {
+                console.debug('ReconnectingWebSocket', 'onopen', _this.url);
             }
-            this.protocol = this.ws.protocol;
-            this.readyState = WebSocket.OPEN;
-            this.reconnectAttempts = 0;
-            const e = Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("open");
+            _this.protocol = _this.ws.protocol;
+            _this.readyState = WebSocket.OPEN;
+            _this.reconnectAttempts = 0;
+            var e = Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('open');
             Object.assign(e, { isReconnect: reconnectAttempt });
             reconnectAttempt = false;
-            this.eventTarget.dispatchEvent(e);
+            _this.eventTarget.dispatchEvent(e);
         };
-        this.ws.onclose = (event) => {
+        this.ws.onclose = function (event) {
             clearTimeout(timeout);
-            this.ws = null;
-            if (this.forcedClose) {
-                this.readyState = WebSocket.CLOSED;
-                this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("close"));
+            _this.ws = null;
+            if (_this.forcedClose) {
+                _this.readyState = WebSocket.CLOSED;
+                _this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('close'));
             }
             else {
-                this.readyState = WebSocket.CONNECTING;
-                const e = Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("connecting");
+                _this.readyState = WebSocket.CONNECTING;
+                var e = Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('connecting');
                 Object.assign(e, {
                     code: event.code,
                     reason: event.reason,
                     wasClean: event.wasClean
                 });
-                this.eventTarget.dispatchEvent(e);
-                if (!reconnectAttempt && !this.timedOut) {
-                    if (this.debug || this.debugAll) {
-                        console.debug("ReconnectingWebSocket", "onClose", this.url);
+                _this.eventTarget.dispatchEvent(e);
+                if (!reconnectAttempt && !_this.timedOut) {
+                    if (_this.debug || _this.debugAll) {
+                        console.debug('ReconnectingWebSocket', 'onclose', _this.url);
                     }
-                    this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("close"));
+                    _this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('close'));
                 }
-                const timeout = defaultReconnectSettings.reconnectInterval * Math.pow(defaultReconnectSettings.reconnectDecay, this.reconnectAttempts);
-                setTimeout(() => {
-                    this.reconnectAttempts++;
-                    this.open(true);
-                }, timeout > defaultReconnectSettings.maxReconnectInterval ? defaultReconnectSettings.maxReconnectInterval : timeout);
+                var timeouts = defaultReconnectSettings.reconnectInterval * Math.pow(defaultReconnectSettings.reconnectDecay, _this.reconnectAttempts);
+                setTimeout(function () {
+                    _this.reconnectAttempts++;
+                    _this.open(true);
+                }, timeouts > defaultReconnectSettings.maxReconnectInterval ? defaultReconnectSettings.maxReconnectInterval : timeouts);
             }
         };
-        this.ws.onmessage = (event) => {
-            if (this.debug || this.debugAll) {
-                console.debug("ReconnectingWebSocket", "onMessage", this.url, event.data);
+        this.ws.onmessage = function (event) {
+            if (_this.debug || _this.debugAll) {
+                console.debug('ReconnectingWebSocket', 'onmessage', _this.url, event.data);
             }
-            const e = Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("message");
+            var e = Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('message');
             Object.assign(e, { data: event.data });
-            this.eventTarget.dispatchEvent(e);
+            _this.eventTarget.dispatchEvent(e);
         };
-        this.ws.onerror = (event) => {
-            if (this.debug || this.debugAll) {
-                console.debug("ReconnectingWebSocket", "onError", this.url, event);
+        this.ws.onerror = function (event) {
+            if (_this.debug || _this.debugAll) {
+                console.debug('ReconnectingWebSocket', 'onerror', _this.url, event);
             }
-            this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])("error"));
+            _this.eventTarget.dispatchEvent(Object(__WEBPACK_IMPORTED_MODULE_0__helper__["a" /* generateEvent */])('error'));
         };
-    }
-    addSocketListener() {
-        this.eventTarget.addEventListener("open", (event) => {
-            this.onOpen(event);
+    };
+    ReconnectWebSocket.prototype.addSocketListener = function () {
+        var _this = this;
+        this.eventTarget.addEventListener('open', function (event) {
+            _this.onOpen(event);
         });
-        this.eventTarget.addEventListener("close", (event) => {
-            this.onClose(event);
+        this.eventTarget.addEventListener('close', function (event) {
+            _this.onClose(event);
         });
-        this.eventTarget.addEventListener("connecting", (event) => {
-            this.onConnecting(event);
+        this.eventTarget.addEventListener('connecting', function (event) {
+            _this.onConnecting(event);
         });
-        this.eventTarget.addEventListener("message", (event) => {
-            this.onMessage(event);
+        this.eventTarget.addEventListener('message', function (event) {
+            _this.onMessage(event);
         });
-        this.eventTarget.addEventListener("error", (event) => {
-            this.onError(event);
+        this.eventTarget.addEventListener('error', function (event) {
+            _this.onError(event);
         });
-    }
-    send(data) {
+    };
+    ReconnectWebSocket.prototype.send = function (data) {
         if (this.ws) {
             if (this.debug || this.debugAll) {
-                console.debug("ReconnectingWebSocket", "send", this.url, data);
+                console.debug('ReconnectingWebSocket', 'send', this.url, data);
             }
             return this.ws.send(data);
         }
         else {
-            throw "INVALID_STATE_ERR : Pausing to reconnect webSocket";
+            throw new Error('INVALID_STATE_ERR : Pausing to reconnect websocket');
         }
-    }
-    close(code, reason) {
-        if (typeof code == "undefined") {
+    };
+    ReconnectWebSocket.prototype.close = function (code, reason) {
+        if (typeof code === 'undefined') {
             code = 1000;
         }
         this.forcedClose = true;
         if (this.ws) {
             this.ws.close(code, reason);
         }
-    }
-    refresh() {
+    };
+    ReconnectWebSocket.prototype.refresh = function () {
         if (this.ws) {
             this.ws.close();
         }
-    }
-    onOpen(event) {
-    }
-    onClose(event) {
-    }
-    onConnecting(event) {
-    }
-    onMessage(event) {
-    }
-    onError(event) {
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = ReconnectWebSocket;
-
+    };
+    ReconnectWebSocket.prototype.onOpen = function (event) { };
+    ReconnectWebSocket.prototype.onClose = function (event) { };
+    ReconnectWebSocket.prototype.onConnecting = function (event) { };
+    ReconnectWebSocket.prototype.onMessage = function (event) { };
+    ReconnectWebSocket.prototype.onError = function (event) { };
+    return ReconnectWebSocket;
+}());
+/* harmony default export */ __webpack_exports__["a"] = (ReconnectWebSocket);
 
 
 /***/ })
